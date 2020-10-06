@@ -1,0 +1,144 @@
+{%extends 'layout.html'%}
+{%block content%}
+  <div class="container" style="margin-top: 200px;">        
+    {%if session%}  
+    <div class="py-5 text-center everything">
+        <h2>Checkout form</h2>           
+         <p class="lead">Please fill all the details in the form below</p>
+        <div class="row">
+        <div class="col-md-6 order-md-2 mb-4">
+            <h4 class="d-flex justify-content-between align-items-center mb-3">
+            <span class="text-muted">Your cart</span>
+            <span class="badge badge-secondary badge-pill">{{cart_length}}</span>
+            </h4>
+            <ul class="list-group mb-3">
+                <div class="cart-items">
+                  {%for item,price,qty in cartItems%}
+                    <li class="list-group-item d-flex justify-content-between lh-condensed cart-item">
+                      <div>
+                      <h6 class="my-0 cart-item-title">{{item}}</h6>
+                      <small class="text-muted cart-item-price">{{price/qty}} per one</small>
+                      </div>
+                      <span> <input type="number" class="form-control-sm cart-item-quantity m-1" value="{{qty}}" style="max-width: 50px;"><button class="btn btn-danger cart-item-remove"><i class="fa fa-remove"></i></button></span>
+                    </li>  
+                  {%endfor%}
+                <li class="list-group-item d-flex justify-content-between bg-light">
+                  <form name="formA">
+                    <div class="form-inline">
+                      <input type="radio" name="tp" value="0" checked>&nbsp;Inside school &nbsp; &nbsp;
+                      <input type="radio" name="tp" value="100">&nbsp;Outside school <small>(choba,eze,alakahia junction)</small>
+                    </div>
+                  </form>
+                  <span class="text-muted cart-tp-price">$0</span>
+                  
+                </li>
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>Total (USD)</span>
+                    <strong class="cart-total-price" id="price">${{cart_total}}</strong>
+                </li>
+                </div>
+            </ul>              
+      </div>              
+        <div class="col-md-6 order-md-1">
+          <h4 class="mb-3">Personal Info</h4>
+          <form id="paymentForm">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="firstName">First name</label>
+                <input type="text" class="form-control" id="firstName" placeholder="" value="" required="">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="lastName">Last name</label>
+                <input type="text" class="form-control" id="lastName" placeholder="" value="" required="">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="email">Email</label>
+              <input type="email" class="form-control" id="email" placeholder="you@example.com">
+            </div>
+
+            <div class="mb-3">
+              <label for="address">Phone number</label>
+              <input type="text" class="form-control" id="address" placeholder="07733627277" required="">
+            </div>
+            <hr class="mb-4">
+            <button class="btn btn-primary btn-lg btn-block" type="submit">Proceed to Pay</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  {%else%}
+      <div class="empty">
+        <p class="">You have not added any book to the cart</p>
+      </div>
+    </div>
+  {%endif%} 
+{%endblock%}
+{%block script%}
+<script src="{{url_for ('static', filename='js/cart.js')}}"></script>
+<script src="https://js.paystack.co/v1/inline.js"></script>  
+<script>
+    var paymentForm = document.getElementById('paymentForm');
+    paymentForm.addEventListener('submit', payWithPaystack, false);
+    var address=document.getElementById('address').value
+    var purchasedItems=''
+    var cartItemsCont= document.querySelector('.cart-items')
+    var cartItems=cartItemsCont.querySelectorAll('.cart-item')
+    cartItems.forEach(item => {
+      purchasedItems+=item+' ' 
+    })
+    function payWithPaystack(e) {
+    e.preventDefault();
+    var handler = PaystackPop.setup({
+        key: 'pk_test_e813dbd8877c4e4f9de3ca3aa6fbd7310f230280', // Replace with your public key
+        email: document.getElementById('email').value,
+        amount: (document.getElementById('price').textContent.replace('$',''))*100, // the amount value is multiplied by 100 to convert to the lowest currency unit
+        currency: 'NGN', // Use GHS for Ghana Cedis or USD for US Dollars
+        firstname: document.getElementById('firstName').value,
+        lastname: document.getElementById('lastName').value,
+        reference: Math.floor((Math.random() *10000)+1), // Replace with a reference you generated
+        callback: function(response) {
+          var reference=response.reference;
+          var entry = {
+            email: email,
+            firstname:firstname,
+            lastname:lastname,
+            address:address,
+            amount:amount,
+            purchasedItems:purchasedItems,
+            reference:reference
+          };
+  //         fetch(`${window.origin}/verify_transaction?reference=${reference}`,{
+  //     method: "POST",
+  //     credentials: "include",
+  //     body: JSON.stringify(title),
+  //     cache: "no-cache",
+  //     headers: new Headers({
+  //       "content-type": "application/json"
+  //     })
+  //   })
+  //     .then(function (response) {
+  //       if (response.status !== 200) {
+  //         console.log(`Looks like there was a problem. Status code: ${response.status}`);
+  //         return;
+  //       }
+  //       response.json().then(data => { 
+  //         updateCartTotal()
+  //         })
+  //     })
+  //     .catch(function (error) {
+  //       console.log("Fetch error: " + error);
+  //     });
+  // }
+          //this happens after the payment is completed successfully
+        // Make an AJAX call to your server with the reference to verify the transaction
+        },
+        onClose: function() {
+        alert('Transaction was not completed, window closed.');
+        },
+    });
+    handler.openIframe();
+    }
+</script>
+{%endblock%}
